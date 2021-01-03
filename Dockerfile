@@ -4,7 +4,7 @@ ARG FOUNDRY_USERNAME
 ARG FOUNDRY_VERSION=0.7.9
 ARG VERSION
 
-FROM node:12-alpine as optional-release-stage
+FROM node:12-slim as optional-release-stage
 
 ARG FOUNDRY_PASSWORD
 ARG FOUNDRY_RELEASE_URL
@@ -33,7 +33,7 @@ RUN \
     unzip -d dist ${ARCHIVE} 'resources/*'; \
   fi
 
-FROM node:12-alpine as final-stage
+FROM node:12-slim as final-stage
 
 ARG FOUNDRY_UID=421
 ARG FOUNDRY_VERSION
@@ -65,12 +65,15 @@ COPY \
   ./
 RUN addgroup --system --gid ${FOUNDRY_UID} foundry \
   && adduser --system --uid ${FOUNDRY_UID} --ingroup foundry foundry \
-  && apk --update --no-cache add \
+  && apt-get update && apt-get install -y \
   curl \
   jq \
   sed \
-  su-exec \
   tzdata \
+  unzip \
+  && rm -rf /var/lib/apt/lists/* \
+  && curl --location --fail https://github.com/songdongsheng/su-exec/releases/download/1.3/su-exec-glibc-shared > /usr/local/bin/su-exec \
+  && chmod ugo+x /usr/local/bin/su-exec \
   && npm install && echo ${VERSION} > image_version.txt
 
 VOLUME ["/data"]
